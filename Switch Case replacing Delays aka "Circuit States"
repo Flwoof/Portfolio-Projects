@@ -1,0 +1,452 @@
+// Generic button pin assignment 
+int button1 = 12; 
+int button2 = 4; 
+int button3 = 2; 
+/* The white LED's needed to be these numbers, because they have pulse width 
+modulation 
+snow is meant to be "soft", not blinding. Therefore, brightness needed to be 
+turned down greatly */
+int whiteLed1 = 11; 
+int whiteLed2 = 10; 
+int whiteLed3 = 6; 
+// Same as above, rain needs to be soft, even in a lightning storm the rain does 
+not flash/blind you. Blue LEDs are modulated 
+int blueLed1 = 9; 
+int blueLed2 = 5; 
+int blueLed3 = 3; 
+// Lightning, the yellow LEDs, on the other hand, are always set to be on full 
+blinding brightness, (digitalWrite), to mimic real life 
+int yellowLed1 = 8; 
+int yellowLed2 = 7; 
+int yellowLed3 = 14; //pin A0 is made digital so I can just use HIGH and LOW 
+// Snow simulator commands 
+unsigned long previousSnowMillis = 0; 
+int snowStep = 0; 
+bool isSnowSequence = false; 
+int snowSequenceCount = 0; 
+// Rain simulator commands 
+unsigned long previousRainMillis = 0; 
+int rainStep = 0; 
+bool isRainSequence = false; 
+int rainSequenceCount = 0; 
+// Lightning storm simulator commands 
+unsigned long previousLightningMillis = 0; 
+int lightningStep = 0; 
+bool isLightningSequence = false; 
+int lightningSequenceCount = 0; 
+int lightningRainCounter = 0; /* During the lightning storm, the rain sequence 
+and lightning flash sequence repeat their own amount of times, 
+hence the need for seperate counters (will explain a bit more at actual sequence) 
+*/
+int lightningFlashCounter = 0; 
+//declare inputs and outputs for buttons and leds
+void setup() {
+ pinMode(button1, INPUT); 
+ pinMode(button2, INPUT); 
+ pinMode(button3, INPUT); 
+ 
+ pinMode(whiteLed1, OUTPUT); 
+ pinMode(whiteLed2, OUTPUT); 
+ pinMode(whiteLed3, OUTPUT); 
+ pinMode(blueLed1, OUTPUT); 
+ pinMode(blueLed2, OUTPUT); 
+ pinMode(blueLed3, OUTPUT); 
+ pinMode(yellowLed1, OUTPUT); 
+ pinMode(yellowLed2, OUTPUT); 
+ pinMode(yellowLed3, OUTPUT); 
+}
+
+bool millisDelay(int duration, unsigned long &previousMillis) {
+ if (millis() - previousMillis >= duration) {
+ previousMillis = millis(); 
+ return true; 
+ }
+ return false; 
+}
+//THE VOID FUNCTIONS I WROTE 
+// Rain sequence function
+void rainSequence() {
+ 
+//Here's a basic breakdown of my function in action 
+ switch (rainStep) { //create switch case with parameter rainStep, set to 0. 
+This will control what case we're on.
+ case 0: //case number 0 (first case)
+ analogWrite(blueLed1, 10); //turn blueLed1 on, to 10
+ if (millisDelay(155, previousRainMillis)) { //if 155 milliseconds has 
+passed.... 
+ analogWrite(blueLed2, 10); // turn blueLed2 on, to 10 (placed 
+after delay to make visual rain pattern look more random)
+ rainStep++; //+1 gets added to rainStep, rainStep now = 1. Now 
+we go on to case 1.
+ }
+ break; //end the current case 
+ //this pattern repeats for all cases
+ case 1: 
+ analogWrite(blueLed3, 10); 
+ digitalWrite(blueLed1, LOW); //oh and I use digitalWrite to turn 
+things off even with analog ability
+ // it's just easier for my brain, and 
+these are all declared "digital pins" so it works 
+ if (millisDelay(165, previousRainMillis)) { 
+ rainStep++; 
+ }
+ break; 
+ case 2: 
+ analogWrite(blueLed1, 10); 
+ digitalWrite(blueLed2, LOW); 
+ if (millisDelay(165, previousRainMillis)) {
+ rainStep++; 
+ }
+ break; 
+ case 3: 
+ digitalWrite(blueLed3, LOW); 
+ analogWrite(blueLed2, 10); 
+ if (millisDelay(165, previousRainMillis)) { 
+ rainStep++; 
+ }
+ break; 
+ case 4: 
+ digitalWrite(blueLed2, LOW); 
+ digitalWrite(blueLed1, LOW); 
+ analogWrite(blueLed3, 10); 
+ if (millisDelay(175, previousRainMillis)) {
+ rainStep++; 
+ }
+ break; 
+ case 5: 
+ analogWrite(blueLed2, 10); 
+ analogWrite(blueLed1, 10); 
+ if (millisDelay(155, previousRainMillis)) {
+ digitalWrite(blueLed3, LOW); 
+ rainStep++; 
+ }
+ break; 
+ case 6:
+ analogWrite(blueLed2, LOW); 
+ analogWrite(blueLed3, 10); 
+ if (millisDelay(155, previousRainMillis)) { 
+ rainStep++; 
+ }
+ break; 
+ case 7: 
+ //The final step checks to see if the rainSequenceCount is greater than 
+or equal to 7, 
+ // the sequence repeats if the switch case has not run 7 times 
+ // (this prevents me from having to type the same pattern seven times, 
+much less work, basically a for loop but different) 
+ 
+ digitalWrite(blueLed2, LOW);
+ digitalWrite(blueLed1, LOW); 
+ digitalWrite(blueLed3, LOW); 
+ rainStep = 0; //rainStep resets to zero so cases can repeat 
+ rainSequenceCount++; //rainSequenceCount gets 1 added to it
+ if (rainSequenceCount >= 7) { //if the sequence has run 7 times...
+ isRainSequence = false; //stop the sequence
+ }
+ break; 
+ }
+}
+//this formula repeats for all cases, it's the same for the snow sequence but 
+with different parameter values
+// Snow sequence function
+//the snow sequence has a lot longer delays than rain or thunder, because a 
+flurry of snow falls very slowly (it's not a blizzard)
+//where as rain tends to fall faster
+void snowSequence() {
+ switch (snowStep) {
+ case 0: 
+ analogWrite(whiteLed1, 10); 
+ if (millisDelay(800, previousSnowMillis)) {
+ snowStep++;
+ }
+ break;
+ case 1: 
+ digitalWrite(whiteLed1, LOW); 
+ analogWrite(whiteLed3, 10); 
+ if (millisDelay(800, previousSnowMillis)) { 
+ snowStep++; 
+ }
+ break; 
+ case 2: 
+ digitalWrite(whiteLed3, LOW); 
+ analogWrite(whiteLed2, 10); 
+ if (millisDelay(800, previousSnowMillis)) { 
+ snowStep++; 
+ }
+ break; 
+ case 3: 
+ digitalWrite(whiteLed2, LOW); 
+ analogWrite(whiteLed1, 10); 
+ if (millisDelay(500, previousSnowMillis)) { 
+ snowStep++; 
+ }
+ break; 
+ case 4: 
+ analogWrite(whiteLed2, 10); 
+ if (millisDelay(600, previousSnowMillis)) { 
+ snowStep++; 
+ }
+ break; 
+ case 5: 
+ digitalWrite(whiteLed2, LOW); 
+ if (millisDelay(800, previousSnowMillis)) { 
+ snowStep++; 
+ }
+ break; 
+ case 6: 
+ digitalWrite(whiteLed1, LOW); 
+ if (millisDelay(700, previousSnowMillis)) { 
+ snowStep++; 
+ }
+ break; 
+ case 7: 
+ analogWrite(whiteLed3, 10); 
+ if (millisDelay(600, previousSnowMillis)) { 
+ snowStep++; 
+ }
+ break; 
+ case 8: 
+ analogWrite(whiteLed1, 10); 
+ if (millisDelay(800, previousSnowMillis)) { 
+ snowStep++; 
+ }
+ break; 
+ case 9: 
+ digitalWrite(whiteLed3, LOW); 
+ digitalWrite(whiteLed1, LOW); 
+ snowStep = 0; 
+ snowSequenceCount++; 
+ if (snowSequenceCount >= 2) {
+ isSnowSequence = false; 
+ }
+ break; 
+ }
+}
+
+// Lightning storm sequence steps 
+//This one is a bit different so I'll include a lil more explanation 
+void lightningSequence() {
+ switch (lightningStep) {
+ //cases 0-2 control lightning flashes 
+ case 0: 
+ digitalWrite(yellowLed1, HIGH); 
+ digitalWrite(yellowLed2, HIGH); 
+ digitalWrite(yellowLed3, HIGH); 
+ if (millisDelay(1000, previousLightningMillis)) { 
+ lightningStep++; 
+ }
+ break; 
+ case 1: 
+ digitalWrite(yellowLed1, LOW); 
+ digitalWrite(yellowLed2, LOW); 
+ digitalWrite(yellowLed3, LOW); 
+ if (millisDelay(100, previousLightningMillis)) { 
+ lightningStep++; 
+ }
+ break; 
+ case 2: 
+ digitalWrite(yellowLed1, HIGH); 
+ digitalWrite(yellowLed2, HIGH); 
+ digitalWrite(yellowLed3, HIGH); 
+ if (millisDelay(100, previousLightningMillis)) { 
+ lightningStep++; 
+ }
+ break; 
+ // Case 3 turns all the yellow LED's off, then checks to see if the 100ms 
+flash sequence has repeated three times yet 
+ case 3: 
+ digitalWrite(yellowLed1, LOW); 
+ digitalWrite(yellowLed2, LOW); 
+ digitalWrite(yellowLed3, LOW); 
+ if(lightningFlashCounter < 2){ // if lightningFlashCounter is less 
+than 2 (repeated less than 3 times) 
+ lightningFlashCounter++; // add one to the lightningFlashCounter 
+ lightningStep = 1; // start at case 1 again to repeat flash 
+sequence 
+ }
+ else{ // if flash sequence has repeated 3 times 
+ lightningFlashCounter = 0; // reset the counter to 0 
+ lightningStep++; // continue sequence as normal 
+ }
+ break; 
+ // cases 4-18 control the heavy rain of the storm sequence 
+ case 4: 
+ analogWrite(blueLed1, 10); 
+ if (millisDelay(70, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 5: 
+ analogWrite(blueLed3, 10); 
+ if (millisDelay(60, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 6: 
+ digitalWrite(blueLed1, LOW); 
+ if (millisDelay(90, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 7: 
+ digitalWrite(blueLed3, LOW); 
+ if (millisDelay(40, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 8: 
+ analogWrite(blueLed2, 10); 
+ if (millisDelay(90, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 9: 
+ analogWrite(blueLed1, 10); 
+ digitalWrite(blueLed2, LOW); 
+ if (millisDelay(70, previousLightningMillis)) {
+ lightningStep++;
+ }
+ break; 
+ case 10: 
+ analogWrite(blueLed3, 10); 
+ digitalWrite(blueLed1, LOW); 
+ if (millisDelay(60, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 11: 
+ analogWrite(blueLed1, 10); 
+ analogWrite(blueLed2, 10); 
+ if (millisDelay(90, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 12: 
+ digitalWrite(blueLed3, LOW); 
+ digitalWrite(blueLed2, LOW); 
+ if (millisDelay(40, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 13: 
+ analogWrite(blueLed2, 10); 
+ if (millisDelay(90, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 14: 
+ digitalWrite(blueLed1, LOW); 
+ digitalWrite(blueLed2, LOW); 
+ if (millisDelay(70, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 15: 
+ analogWrite(blueLed3, 10); 
+ analogWrite(blueLed1, 10); 
+ if (millisDelay(60, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 16: 
+ digitalWrite(blueLed1, LOW); 
+ if (millisDelay(90, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 17: 
+ digitalWrite(blueLed3, LOW); 
+ if (millisDelay(40, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ case 18: 
+ analogWrite(blueLed2, 10); 
+ if (millisDelay(90, previousLightningMillis)) {
+ lightningStep++; 
+ }
+ break; 
+ //if the heavy rain sequence has repeated 3 times, the sequence moves on 
+ //if not, lightningStep gets reset to 4 (the start of the rain sequence) 
+and the heavy rain flashes repeat 
+ //the purpose of this is so my "rain storm" can last three times as long 
+with the same number of cases (16, instead of 48) 
+ case 19: 
+ if(lightningRainCounter < 2){
+ lightningRainCounter++; 
+ lightningStep = 4; 
+ }
+ else{
+ lightningRainCounter = 0; 
+ lightningStep++; 
+ }
+ break; 
+ 
+ case 20: //repeat the entire lightning storm 3 times 
+ digitalWrite(blueLed2, LOW); 
+ digitalWrite(blueLed3, LOW); 
+ digitalWrite(blueLed1, LOW); 
+ lightningStep = 0; 
+ lightningSequenceCount++; 
+ if (lightningSequenceCount >= 3) {
+ isLightningSequence = false; 
+ }
+ break; 
+ }
+}
+//THE VOID LOOP 
+void loop() {
+//ACTUAL SEQUENCE RESETERS VIA BUTTON PRESS
+ //Reset rain sequence variables if button 1 is pressed
+ if (digitalRead(button1) == HIGH && !isRainSequence && !isSnowSequence 
+&& !isLightningSequence) { //when button 1 is pressed 
+ //^ that first line prevents sequences from running at the same time if you 
+press another button while a sequence is running 
+ isRainSequence = true; //start function isRainSequence 
+ rainStep = 0; //reset the case counter for rain sequence to 0 
+ rainSequenceCount = 0; //reset the number of times the entire sequence 
+has run to 0 
+ }
+ //same method for every other sequence starter via button
+ // Reset snow sequence variables if button 2 is pressed
+ if (digitalRead(button2) == HIGH && !isSnowSequence && !isLightningSequence 
+&& !isRainSequence) {
+ isSnowSequence = true; 
+ snowStep = 0; 
+ snowSequenceCount = 0; 
+ }
+ //Reset lightning storm variables if button 3 is pressed
+ if (digitalRead(button3) == HIGH && !isLightningSequence && !isRainSequence 
+&& !isSnowSequence) {
+ isLightningSequence = true; 
+ lightningStep = 0; 
+ lightningSequenceCount = 0; 
+ }
+//FAILSAFES/OFFICIAL STARTERS
+ //starts rain sequence after it has been called via button 1 press
+ if (isRainSequence) {
+ rainSequence(); 
+ if(!isRainSequence){
+ rainStep = 0; //backup resets in case the first ones fail (I've had 
+instances where they did) 
+ rainSequenceCount = 0; //same as above
+ }
+ }
+ //starts snow sequence after it has been called via button 2 press
+ if (isSnowSequence) {
+ snowSequence(); 
+ if (!isSnowSequence) {
+ snowStep = 0;
+ snowSequenceCount = 0; 
+ }
+ }
+ //starts thunder sequence after it has been called via button 3 press
+ if (isLightningSequence) {
+ lightningSequence(); 
+ if(!isLightningSequence){
+ lightningStep = 0; 
+ lightningSequenceCount = 0; 
+ }
+ }
+}
+//650 lines of pure agony later I me
