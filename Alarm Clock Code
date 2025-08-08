@@ -1,0 +1,468 @@
+// RTC shenanigans
+// red 5, blue 7, green 6
+#include <DS3231.h>
+#include <Wire.h>
+DS3231 clock;
+RTCDateTime dateTime;
+
+bool firstGuess = true;
+
+bool replay = false;
+bool replay2 = false;
+bool replay3 = false;
+
+int buzzer1 = 9;
+int buzzer2 = 12;
+int buzzer3 = 11;
+
+//series 1
+int redButton = 5;
+int greenButton = 6;
+int blueButton = 7;
+
+//series 2
+int yellowButton = 22;
+int whiteButton = 24;
+int redButton2 = 26;
+
+//series 3
+int yellowButton2 = 32;
+int whiteButton2 = 30;
+int blueButton2 = 28;
+
+
+bool alarmSound = false;
+bool alarmSound2 = false;
+bool alarmSound3 = false;
+int buttonCount = 0;
+int interval = 350;
+unsigned long previousMillis = 0;
+int currentNote = 0;
+int resetButton = 8;
+
+int numCorrect = 0;
+int numCorrect2 = 0;
+int numCorrect3 = 0;
+int count = 0;
+int count2 = 0;
+int count3 = 0;
+int arrayOne[3] = {0, 0, 0};
+int arrayTwo[3] = {0, 0, 0};
+int arrayThree[3] = {0, 0, 0};
+
+unsigned long blinkInterval = 200;
+//led series 1
+int redLed = 4;
+int blueLed = 2;
+int greenLed = 3;
+
+//led series 2
+int yellowLed = 34;
+int whiteLed = 35;
+int redLed2 = 36;
+
+//led series 3
+int whiteLed2 = 38;
+int yellowLed2 = 39;
+int blueLed2 = 40;
+
+
+bool restart = false;
+bool restart2 = false;
+bool restart3 = false;
+bool start2 = false;
+bool start3 = false;
+long randNumber;
+
+float notes[] = {
+  329.63, 311.13, 329.63, 311.13, 329.63, 246.94, 293.66, 261.63, 
+  220, 146.83, 174.61, 220, 246.94, 174.61, 233.08, 246.94, 261.63,
+};
+
+void setup() {
+  pinMode(buzzer1, OUTPUT);
+  pinMode(buzzer2, OUTPUT);
+  pinMode(buzzer3, OUTPUT);
+
+  pinMode(redButton, INPUT);
+  pinMode(greenButton, INPUT);
+  pinMode(blueButton, INPUT);
+
+  pinMode(redButton2, INPUT);
+  pinMode(yellowButton, INPUT);
+  pinMode(whiteButton, INPUT);
+
+  pinMode(blueButton2, INPUT);
+  pinMode(whiteButton2, INPUT);
+  pinMode(yellowButton2, INPUT);
+
+  pinMode(resetButton, INPUT);
+  Serial.begin(9600);
+
+  pinMode(redLed, OUTPUT);
+  pinMode(blueLed, OUTPUT);
+  pinMode(greenLed, OUTPUT);
+    
+  pinMode(redLed2, OUTPUT);
+  pinMode(whiteLed, OUTPUT);
+  pinMode(yellowLed, OUTPUT);
+
+  pinMode(whiteLed2, OUTPUT);
+  pinMode(blueLed2, OUTPUT);
+  pinMode(yellowLed2, OUTPUT);
+  
+  clock.begin();
+  clock.setDateTime(__DATE__, __TIME__);
+  unsigned long seed = analogRead(A0) + micros();
+  randomSeed(seed);
+}
+
+void printArray() {
+  for (int i = 0; i < count; i++) {
+    Serial.print(arrayOne[i]);
+    Serial.print(" ");
+  }
+  Serial.println(" ");
+  count = 4;
+}
+void printArray2() {
+  for (int i = 0; i < count2; i++) {
+    Serial.print(arrayTwo[i]);
+    Serial.print(" ");
+  }
+  Serial.println(" ");
+  count2 = 4;
+}
+void printArray3() {
+  for (int i = 0; i < count3; i++) {
+    Serial.print(arrayThree[i]);
+    Serial.print(" ");
+  }
+  Serial.println(" ");
+  count3 = 4;
+}
+
+
+int getButtonPressed() {
+  if (digitalRead(redButton) == HIGH) {
+    delay(150);
+    return redLed;
+  } 
+  else if (digitalRead(blueButton) == HIGH) {
+    delay(150);
+    return blueLed;
+  } 
+  else if (digitalRead(greenButton) == HIGH) {
+    delay(150);
+    return greenLed;
+  } 
+  return 0;
+}
+int getButtonPressed2() {
+  if (digitalRead(yellowButton) == HIGH) {
+    delay(150);
+    return yellowLed;
+  } 
+  else if (digitalRead(whiteButton) == HIGH) {
+    delay(150);
+    return whiteLed;
+  } 
+  else if (digitalRead(redButton2) == HIGH) {
+    delay(150);
+    return redLed2;
+  } 
+  return 0;
+}
+int getButtonPressed3() {
+  if (digitalRead(whiteButton2) == HIGH) {
+    delay(150);
+    return whiteLed2;
+  } 
+  else if (digitalRead(yellowButton2) == HIGH) {
+    delay(150);
+    return yellowLed2;
+  } 
+  else if (digitalRead(blueButton2) == HIGH) {
+    delay(150);
+    return blueLed2;
+  } 
+  return 0;
+}
+
+void loop() {
+  // random sequence generator
+  dateTime = clock.getDateTime();
+
+  // alarm sounds until sequence entered
+  if (dateTime.hour == 23 && dateTime.minute == 22) {
+    if (count < 3) {
+      int rand = random(2, 5);  // 2 = green, 3 = blue, 4 = red
+      arrayOne[count] = rand;
+      digitalWrite(rand, HIGH);
+      delay(400);
+      digitalWrite(rand, LOW);
+      delay(400);
+      count++;
+    }
+    if (count == 3) {
+      alarmSound = true;
+      printArray();
+    }
+  }
+  if(start2 == true && count2 < 3){
+    int rand = random(34, 37);  // 2 = green, 3 = blue, 4 = red
+      arrayTwo[count2] = rand;
+      digitalWrite(rand, HIGH);
+      delay(400);
+      digitalWrite(rand, LOW);
+      delay(400);
+      count2++;
+  }
+  if(count2 == 3){
+    alarmSound2 = true;
+    printArray2();
+  }
+  if(start3 == true && count3 < 3){
+    int rand = random(38, 41);  // 2 = green, 3 = blue, 4 = red
+      arrayThree[count3] = rand;
+      digitalWrite(rand, HIGH);
+      delay(400);
+      digitalWrite(rand, LOW);
+      delay(400);
+      count3++;
+  }
+  if(count3 == 3){
+    alarmSound3 = true;
+    printArray3();
+  }
+
+  if (count == 4 && alarmSound == true) {
+    int input = getButtonPressed();
+    if(input != 0){
+    if (numCorrect == 0 && input == arrayOne[0] && firstGuess == true) {
+      delay(150);
+      numCorrect++;
+    }
+    else if (numCorrect == 1 && input == arrayOne[1] && firstGuess == true) {
+      delay(150);
+      numCorrect++;
+    }
+    else if (numCorrect == 2 && input == arrayOne[2] && firstGuess == true) {
+      delay(150);
+      numCorrect++;
+    }
+    else{
+      numCorrect = 0;
+      restart = true;
+      firstGuess = false;
+    }
+    }
+  }
+  if (count2 == 4 && alarmSound2 == true) {
+    int input = getButtonPressed2();
+    if(input != 0){
+    if (numCorrect2 == 0 && input == arrayTwo[0] && firstGuess == true) {
+      delay(150);
+      numCorrect2++;
+    }
+    else if (numCorrect2 == 1 && input == arrayTwo[1] && firstGuess == true) {
+      delay(150);
+      numCorrect2++;
+    }
+    else if (numCorrect2 == 2 && input == arrayTwo[2] && firstGuess == true) {
+      delay(150);
+      numCorrect2++;
+    }
+    else{
+      numCorrect2 = 0;
+      restart2 = true;
+      firstGuess = false;
+    }
+    }
+  }
+  if (count3 == 4 && alarmSound3 == true) {
+    int input = getButtonPressed3();
+    if(input != 0){
+    if (numCorrect3 == 0 && input == arrayThree[0] && firstGuess == true) {
+      delay(150);
+      numCorrect3++;
+    }
+    else if (numCorrect3 == 1 && input == arrayThree[1] && firstGuess == true) {
+      delay(150);
+      numCorrect3++;
+    }
+    else if (numCorrect3 == 2 && input == arrayThree[2] && firstGuess == true) {
+      delay(150);
+      numCorrect3++;
+    }
+    else{
+      numCorrect3 = 0;
+      restart3 = true;
+      firstGuess = false;
+    }
+    }
+  }
+
+  
+
+  if (digitalRead(resetButton) == HIGH && alarmSound == true) {
+    replay = true;
+    firstGuess = true;
+  }
+  if (digitalRead(resetButton) == HIGH && alarmSound2 == true) {
+    replay2 = true;
+    firstGuess = true;
+  }
+  if (digitalRead(resetButton) == HIGH && alarmSound3 == true) {
+    replay3 = true;
+    firstGuess = true;
+  }
+  if(replay == true){
+    digitalWrite(arrayOne[0], HIGH);
+    delay(400);
+    digitalWrite(arrayOne[0], LOW);
+    delay(200);
+    digitalWrite(arrayOne[1], HIGH);
+    delay(400);
+    digitalWrite(arrayOne[1], LOW);
+    delay(200);
+    digitalWrite(arrayOne[2], HIGH);
+    delay(400);
+    digitalWrite(arrayOne[2], LOW);
+    replay = false;
+  }
+  if(replay2 == true){
+    digitalWrite(arrayTwo[0], HIGH);
+    delay(400);
+    digitalWrite(arrayTwo[0], LOW);
+    delay(200);
+    digitalWrite(arrayTwo[1], HIGH);
+    delay(400);
+    digitalWrite(arrayTwo[1], LOW);
+    delay(200);
+    digitalWrite(arrayTwo[2], HIGH);
+    delay(400);
+    digitalWrite(arrayTwo[2], LOW);
+    replay2 = false;
+  }
+  if(replay3 == true){
+    digitalWrite(arrayThree[0], HIGH);
+    delay(400);
+    digitalWrite(arrayThree[0], LOW);
+    delay(200);
+    digitalWrite(arrayThree[1], HIGH);
+    delay(400);
+    digitalWrite(arrayThree[1], LOW);
+    delay(200);
+    digitalWrite(arrayThree[2], HIGH);
+    delay(400);
+    digitalWrite(arrayThree[2], LOW);
+    replay3 = false;
+  }
+  if(restart == true){
+    digitalWrite(redLed, HIGH);
+    digitalWrite(greenLed, HIGH);
+    digitalWrite(blueLed, HIGH);
+    delay(1000);
+    digitalWrite(redLed, LOW);
+    digitalWrite(greenLed, LOW);
+    digitalWrite(blueLed, LOW);
+    restart = false;
+
+
+  }
+  if(restart2 == true){
+    digitalWrite(redLed2, HIGH);
+    digitalWrite(whiteLed, HIGH);
+    digitalWrite(yellowLed, HIGH);
+    delay(1000);
+    digitalWrite(redLed2, LOW);
+    digitalWrite(whiteLed, LOW);
+    digitalWrite(yellowLed, LOW);
+    restart2 = false;
+  }
+  if(restart3 == true){
+    digitalWrite(whiteLed2, HIGH);
+    digitalWrite(blueLed2, HIGH);
+    digitalWrite(yellowLed2, HIGH);
+    delay(1000);
+    digitalWrite(whiteLed2, LOW);
+    digitalWrite(yellowLed2, LOW);
+    digitalWrite(blueLed2, LOW);
+    restart3 = false;
+  }
+  
+  unsigned long currentMillis = millis();
+  
+  // alarm buzzing
+  if (alarmSound) {
+    if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis;
+      if (currentNote < sizeof(notes) / sizeof(notes[0])) {
+        tone(buzzer1, notes[currentNote], 300);
+        currentNote++;
+      } 
+      else {
+        currentNote = 0;
+      }
+    }
+  }
+  if (alarmSound2) {
+    if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis;
+      if (currentNote < sizeof(notes) / sizeof(notes[0])) {
+        tone(buzzer2, notes[currentNote], 300);
+        currentNote++;
+      } 
+      else {
+        currentNote = 0;
+      }
+    }
+  }
+  if (alarmSound3) {
+    if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis;
+      if (currentNote < sizeof(notes) / sizeof(notes[0])) {
+        tone(buzzer3, notes[currentNote], 300);
+        currentNote++;
+      } 
+      else {
+        currentNote = 0;
+      }
+    }
+  }
+  // if sequence correct, stop alarm
+  if (numCorrect == 3 && alarmSound == true) {
+    alarmSound = false;
+    noTone(buzzer1);
+    digitalWrite(buzzer1, LOW);
+    currentNote = 0;
+    delay(2000);
+    start2 = true;
+  }
+  if(alarmSound){
+    Serial.println(numCorrect);
+  }
+  if(alarmSound2){
+    Serial.println(numCorrect2);
+  }
+  if(alarmSound3){
+    Serial.println(numCorrect3);
+  }
+  if (numCorrect2 == 3 && alarmSound2 == true) {
+    alarmSound2 = false;
+    noTone(buzzer2);
+    digitalWrite(buzzer2, LOW);
+    currentNote = 0;
+    delay(2000);
+    start3 = true;
+  }
+  if(numCorrect3 == 3 && alarmSound3 == true){
+    alarmSound3 = false;
+    noTone(buzzer3);
+    digitalWrite(buzzer3, LOW);
+    currentNote = 0;
+  }
+  Serial.println(dateTime.hour);
+  Serial.println(dateTime.minute);
+}
