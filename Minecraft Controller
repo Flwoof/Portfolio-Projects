@@ -1,0 +1,253 @@
+//joystick inputs
+int jsButton = 5;
+int MJxPin = A0;
+int MJyPin = A1;
+int CJxPin = A2;
+int CJyPin = A3;
+int MJxVal;
+int MJyVal;
+int CJxVal;
+int CJyVal;
+
+//shift register inputs
+int dataPin = 2;
+int latchPin = 3;
+int clockPin = 4;
+
+//button inputs
+int yellowButton = 6;
+int redButton = 7;
+int blueButton = 8;
+int greenButton = 9;
+int TLbutton = 15;
+int TRbutton = 14;
+int BLbutton = 16;
+int BRbutton = 10;
+                     
+//computer keyboard
+#include <Keyboard.h>
+char ctrlKey = KEY_LEFT_CTRL;
+char shiftKey = KEY_LEFT_SHIFT;
+
+//computer mouse
+#include <Mouse.h>
+char rClick = MOUSE_RIGHT;
+char lClick = MOUSE_LEFT;
+
+
+
+
+void setup() {
+  pinMode(MJxPin, INPUT);
+  pinMode(MJyPin, INPUT);
+  pinMode(CJxPin, INPUT);
+  pinMode(CJyPin, INPUT);
+  pinMode(jsButton, INPUT_PULLUP);
+  pinMode(yellowButton, INPUT);
+  Serial.begin(9600);
+  pinMode(dataPin, OUTPUT);
+  pinMode(latchPin, OUTPUT);
+  pinMode(clockPin, OUTPUT);
+  pinMode(TLbutton, INPUT);
+  pinMode(TRbutton, INPUT);
+  pinMode(BLbutton, INPUT);
+  pinMode(BRbutton, INPUT);
+
+}
+
+void loop(){
+  
+//loop readings
+bool buttonState = digitalRead(jsButton);
+static bool ledState = false;
+static bool yellowBState = false;
+
+MJxVal = analogRead(MJxPin);
+MJyVal = analogRead(MJyPin);
+
+CJxVal = analogRead(CJxPin);
+CJyVal = analogRead(CJyPin);
+
+
+
+
+//loop declaration
+byte ledValue;
+
+//joystick button reading
+if (buttonState == LOW) {
+  ledState = !ledState;  //reverse whatever ledState currently is
+  Keyboard.press(shiftKey);
+  delay(300);  //debounce                                                                                            
+}
+
+//movement joystick reading
+//x reading
+
+if(MJxVal > 900){
+  Keyboard.press('d');
+  ledValue |= 0b01000000;
+}
+else{
+  Keyboard.release('d');
+  ledValue &= ~0b01000000;
+}
+
+if(MJxVal < 200){
+  Keyboard.press('a');
+  ledValue |= 0b00010000;
+}
+else{
+  Keyboard.release('a');
+  ledValue &= ~0b00010000;
+}
+//y reading
+if(MJyVal > 900){
+  Keyboard.press('s');
+  ledValue |= 0b00100000;
+}
+else{
+  Keyboard.release('s');
+  ledValue &= ~0b00100000;
+}
+
+if(MJyVal < 200){
+  Keyboard.press('w');
+  ledValue |= 0b10000000;
+}
+else{
+  Keyboard.release('w');
+  ledValue &= ~0b10000000;
+}
+
+//red and green LED response
+if (ledState) {
+  ledValue |= 0b00000001; //green led on, red led off, = autosprint on
+} 
+else {
+  Keyboard.release(shiftKey);
+  ledValue |= 0b00000010; //green led off, red led on, = autosprint off  
+  delay(100);
+}
+
+if (ledState) {
+  //x camera movement
+  if(CJxVal < 200){
+    Mouse.move(10, 0, 0);
+  }
+  else{
+    Mouse.move(0, 0, 0);
+  }
+  if(CJxVal > 900){
+    Mouse.move(-10, 0, 0);
+  }
+  //y camera movement
+  if(CJyVal > 900){
+    Mouse.move(0, -10, 0);
+  }
+  else{
+    Mouse.move(0, 0, 0);
+  }
+  if(CJyVal < 200){
+    Mouse.move(0, 10, 0);
+  }
+  else{
+    Mouse.move(0, 0, 0);
+  }
+} 
+if(!ledState){
+  //x camera movement
+  if(CJxVal < 200){
+    Mouse.move(125, 0, 0);
+  }
+  else{
+    Mouse.move(0, 0, 0);
+  }
+  if(CJxVal > 900){
+    Mouse.move(-125, 0, 0);
+  }
+  //y camera movement
+  if(CJyVal > 900){
+    Mouse.move(0, -125, 0);
+  }
+  else{
+    Mouse.move(0, 0, 0);
+  }
+  if(CJyVal < 200){
+    Mouse.move(0, 125, 0);
+  }
+  else{
+    Mouse.move(0, 0, 0);
+  }
+}
+//yellow button reading (crouch enable)
+if(digitalRead(yellowButton) == HIGH){
+  yellowBState = !yellowBState;
+  delay(200);
+}
+
+//green button reading (jump)
+if(digitalRead(greenButton) == HIGH){
+  Keyboard.press(' ');
+  delay(200);
+}
+else{
+  Keyboard.release(' ');
+}
+
+//blue button reading (inventory)
+if(digitalRead(blueButton) == HIGH){
+  delay(200); //debounce
+  Keyboard.write('e');
+}
+
+//check if yellow button has been pushed (enable/disable auto crouch)
+//or if red button is CURRENTLY being HELD (manual crouch)
+if(yellowBState || (digitalRead(redButton) == HIGH)){
+  ledValue |= 0b00000100;
+  Keyboard.press(ctrlKey);
+}
+else{
+  ledValue &= ~0b00000100;
+  Keyboard.release(ctrlKey);
+}
+
+
+if(digitalRead(BRbutton) == HIGH){
+  Mouse.click(rClick);
+  delay(150);
+}
+else{
+  Mouse.release();
+}
+
+if(digitalRead(BLbutton) == HIGH){
+  Mouse.click(lClick);
+  delay(150);
+}
+else{
+  Mouse.release();
+}
+
+if(digitalRead(TRbutton) == HIGH){
+  Mouse.move(0, 0, -1);
+  delay(70);
+}
+else{
+  Mouse.move(0, 0, 0);
+}
+
+if(digitalRead(TLbutton) == HIGH){
+  Mouse.move(0, 0, 1);
+  delay(70);
+}
+
+else{
+  Mouse.move(0, 0, 0);
+}
+
+//refresh shift register input
+digitalWrite(latchPin, LOW);
+shiftOut(dataPin, clockPin, MSBFIRST, ledValue);
+digitalWrite(latchPin, HIGH);
+}
